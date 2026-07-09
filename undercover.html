@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>SOUS COUVERTURE — Dossier confidentiel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E141B;
+    --panel:#161F2B;
+    --panel-2:#1D2836;
+    --paper:#EDE6D3;
+    --paper-line:#C9BFA0;
+    --red:#9C2B22;
+    --red-bright:#C1443A;
+    --teal:#3E9C8F;
+    --text:#E7E2D3;
+    --muted:#7C8798;
+    --line:#2A3646;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--ink);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100%;}
+  body{
+    background-image:
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 40px);
+  }
+  #app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:0 0 40px;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  }
+  .masthead{
+    padding:28px 22px 18px;border-bottom:1px solid var(--line);position:relative;overflow:hidden;
+  }
+  .masthead::after{
+    content:'CONFIDENTIEL';position:absolute;right:-40px;top:8px;font-family:'Special Elite',monospace;
+    font-size:13px;letter-spacing:.3em;color:var(--red);opacity:.28;transform:rotate(8deg);
+    border:2px solid var(--red);padding:4px 10px;
+  }
+  .title{
+    font-family:'Special Elite',monospace;font-size:28px;letter-spacing:.06em;margin:6px 0 2px;color:var(--text);
+  }
+  .subtitle{color:var(--muted);font-size:13px;margin:0;}
+
+  .content{flex:1;padding:20px 22px;}
+  section.block{margin-bottom:26px;}
+  .block-title{
+    font-family:'Special Elite',monospace;font-size:15px;letter-spacing:.05em;color:var(--text);
+    margin:0 0 4px;
+  }
+  .block-desc{color:var(--muted);font-size:12.5px;margin:0 0 12px;line-height:1.5;}
+
+  .stepper{display:flex;align-items:center;gap:14px;}
+  .stepper button{
+    width:44px;height:44px;border-radius:8px;border:1px solid var(--line);background:var(--panel);
+    color:var(--text);font-size:20px;font-family:'IBM Plex Mono',monospace;
+  }
+  .stepper .count{
+    font-family:'IBM Plex Mono',monospace;font-size:26px;min-width:48px;text-align:center;
+  }
+
+  .name-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .name-row{display:flex;align-items:center;gap:10px;}
+  .name-row .idx{
+    font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:12px;width:22px;text-align:right;
+  }
+  input[type="text"]{
+    flex:1;background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:11px 12px;border-radius:6px;font-family:'IBM Plex Sans',sans-serif;font-size:14.5px;
+  }
+  input[type="text"]:focus{outline:none;border-color:var(--teal);}
+
+  .toggle-row{
+    display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);
+  }
+  .toggle-row:last-child{border-bottom:none;}
+  .switch{
+    position:relative;width:46px;height:26px;flex:0 0 auto;border-radius:14px;background:var(--panel-2);
+    border:1px solid var(--line);cursor:pointer;margin-top:2px;
+  }
+  .switch.on{background:var(--teal);border-color:var(--teal);}
+  .switch::after{
+    content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+    background:#0E141B;transition:left .15s ease;
+  }
+  .switch.on::after{left:22px;background:#0E141B;}
+  .toggle-text .name{font-size:14.5px;font-weight:600;color:var(--text);}
+  .toggle-text .desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .stepper-inline{display:flex;align-items:center;gap:10px;margin-top:4px;}
+  .stepper-inline button{
+    width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-family:'IBM Plex Mono',monospace;
+  }
+  .stepper-inline .n{font-family:'IBM Plex Mono',monospace;font-size:16px;min-width:20px;text-align:center;}
+
+  .choice-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .choice{
+    padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--panel);
+    color:var(--muted);font-size:13px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;
+  }
+  .choice.active{background:var(--teal);border-color:var(--teal);color:#0E141B;font-weight:600;}
+
+  .custom-words{display:flex;gap:10px;margin-top:12px;}
+
+  .error-box{
+    background:rgba(156,43,34,.15);border:1px solid var(--red);color:#E9B3AD;
+    padding:11px 13px;border-radius:8px;font-size:13px;margin-top:14px;
+  }
+
+  .btn{
+    display:block;width:100%;text-align:center;padding:16px;border-radius:9px;border:none;
+    font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;font-size:14px;font-weight:600;
+    text-transform:uppercase;cursor:pointer;
+  }
+  .btn-primary{background:var(--teal);color:#0E141B;}
+  .btn-primary:disabled{background:var(--panel-2);color:var(--muted);}
+  .btn-secondary{background:transparent;border:1px solid var(--line);color:var(--text);}
+  .btn-danger{background:var(--red);color:#F3E3E0;}
+  .btn-row{display:flex;gap:10px;margin-top:10px;}
+  .btn-row .btn{flex:1;}
+
+  /* Game screens */
+  .case-file{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.12em;
+  }
+  .pass-instruction{
+    text-align:center;margin:30px 0 10px;
+  }
+  .pass-instruction .to{
+    font-family:'Special Elite',monospace;font-size:22px;color:var(--text);margin:6px 0;
+  }
+  .pass-instruction .hint{color:var(--muted);font-size:13px;}
+
+  .dossier-card{
+    position:relative;margin:26px auto;width:100%;max-width:340px;height:220px;
+    border-radius:10px;perspective:800px;
+  }
+  .dossier-cover{
+    position:absolute;inset:0;border-radius:10px;background:var(--panel);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:10px;cursor:pointer;user-select:none;transition:opacity .18s ease;
+  }
+  .dossier-cover .stamp{
+    font-family:'Special Elite',monospace;color:var(--red);border:3px solid var(--red);
+    padding:6px 16px;border-radius:4px;font-size:14px;letter-spacing:.15em;transform:rotate(-6deg);
+    opacity:.85;
+  }
+  .dossier-cover .cta{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;color:var(--muted);
+    text-transform:uppercase;
+  }
+  .dossier-face{
+    position:absolute;inset:0;border-radius:10px;background:var(--paper);color:#231C12;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+    padding:20px;text-align:center;
+    background-image:repeating-linear-gradient(0deg, transparent 0 27px, var(--paper-line) 27px 28px);
+  }
+  .dossier-face .label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6b6247;text-transform:uppercase;}
+  .dossier-face .word{font-family:'Special Elite',monospace;font-size:30px;margin:6px 0;word-break:break-word;}
+  .dossier-face .role-extra{font-size:12.5px;color:#6b6247;max-width:260px;line-height:1.5;}
+  .dossier-cover.hidden{display:none;}
+  .dossier-face.hidden{display:none;}
+
+  .seen-note{text-align:center;color:var(--muted);font-size:12px;margin-top:14px;font-family:'IBM Plex Mono',monospace;}
+
+  .grid-players{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+  .player-tile{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 10px;
+    text-align:center;cursor:pointer;font-size:14.5px;font-weight:600;
+  }
+  .player-tile.selected{border-color:var(--teal);background:rgba(62,156,143,.15);color:var(--teal);}
+  .player-tile.eliminated{opacity:.35;text-decoration:line-through;cursor:default;}
+
+  .round-banner{
+    text-align:center;padding:10px 0 4px;
+  }
+  .round-banner .n{font-family:'Special Elite',monospace;font-size:19px;}
+
+  .speak-order{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:6px;}
+  .speak-order li{
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    padding:10px 12px;border-radius:7px;font-size:14px;
+  }
+  .speak-order li .n{font-family:'IBM Plex Mono',monospace;color:var(--muted);width:20px;}
+
+  .result-reveal{text-align:center;margin:24px 0;}
+  .result-reveal .stamp-big{
+    display:inline-block;font-family:'Special Elite',monospace;color:var(--red-bright);
+    border:3px solid var(--red-bright);padding:10px 22px;border-radius:6px;letter-spacing:.14em;
+    transform:rotate(-4deg);font-size:18px;margin-bottom:16px;
+  }
+  .result-reveal .who{font-size:17px;margin:4px 0;}
+  .result-reveal .role-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted);margin-top:6px;
+  }
+  .result-reveal .word-was{font-family:'Special Elite',monospace;font-size:20px;color:var(--text);margin-top:10px;}
+
+  .winner-banner{
+    text-align:center;padding:30px 10px;border:1px solid var(--line);border-radius:10px;
+    background:var(--panel);margin:20px 0;
+  }
+  .winner-banner .big{font-family:'Special Elite',monospace;font-size:26px;color:var(--teal);margin-bottom:8px;}
+  .winner-banner .sub{color:var(--muted);font-size:13px;}
+
+  .role-list{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .role-list li{
+    background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:10px 13px;
+    display:flex;justify-content:space-between;align-items:center;font-size:13.5px;gap:10px;
+  }
+  .role-list .rn{font-weight:600;}
+  .role-list .rr{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:11.5px;text-align:right;}
+
+  textarea{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:16px;margin-top:14px;}
+
+  .footer-note{text-align:center;color:var(--muted);font-size:11px;margin-top:30px;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------------------------------------------------------
+   DONNÉES
+--------------------------------------------------------- */
+const WORD_PAIRS = [
+  // Nourriture salée
+  ["Pizza","Quiche"],["Sandwich","Burger"],["Soupe","Bouillon"],["Salade","Crudités"],
+  ["Riz","Pâtes"],["Omelette","Crêpe"],["Frites","Chips"],["Ravioli","Tortellini"],
+  ["Kebab","Tacos"],["Couscous","Paella"],["Fondue","Raclette"],["Croque-monsieur","Panini"],
+  ["Bouillabaisse","Velouté"],["Falafel","Nugget"],["Choucroute","Cassoulet"],["Nouilles","Vermicelles"],
+  ["Gratin","Lasagne"],["Terrine","Pâté"],["Bruschetta","Tartine"],["Empanada","Chausson"],
+  ["Risotto","Polenta"],["Pilon de poulet","Côtelette"],["Bagel","Pain pita"],["Quenelle","Boulette"],
+  // Desserts & sucré
+  ["Gâteau","Tarte"],["Chocolat","Bonbon"],["Glace","Sorbet"],["Biscuit","Gaufre"],
+  ["Confiture","Miel"],["Crème brûlée","Flan"],["Macaron","Meringue"],["Beignet","Churros"],
+  ["Cheesecake","Tiramisu"],["Nougat","Caramel"],["Éclair","Religieuse"],["Cannelé","Financier"],
+  ["Sorbet","Granité"],["Pain d'épices","Spéculoos"],["Guimauve","Marshmallow"],["Crêpe","Blini"],
+  ["Brioche","Panettone"],["Tarte Tatin","Clafoutis"],["Barbe à papa","Chewing-gum"],["Praline","Truffe au chocolat"],
+  // Boissons
+  ["Café","Thé"],["Jus","Soda"],["Vin","Cidre"],["Bière","Champagne"],
+  ["Lait","Chocolat chaud"],["Limonade","Sirop"],["Cocktail","Mocktail"],["Smoothie","Milkshake"],
+  ["Eau gazeuse","Eau plate"],["Infusion","Tisane"],["Cappuccino","Latte"],["Punch","Sangria"],
+  // Animaux terrestres
+  ["Chat","Chien"],["Lion","Tigre"],["Loup","Renard"],["Cheval","Âne"],
+  ["Vache","Bison"],["Mouton","Chèvre"],["Ours","Panda"],["Éléphant","Rhinocéros"],
+  ["Girafe","Zèbre"],["Singe","Gorille"],["Lapin","Lièvre"],["Écureuil","Hamster"],
+  ["Cochon","Sanglier"],["Cerf","Élan"],["Kangourou","Wallaby"],["Hérisson","Tatou"],
+  ["Léopard","Guépard"],["Chameau","Dromadaire"],["Souris","Rat"],["Furet","Belette"],
+  // Animaux marins
+  ["Baleine","Dauphin"],["Requin","Barracuda"],["Poulpe","Calamar"],["Étoile de mer","Oursin"],
+  ["Crabe","Homard"],["Méduse","Anémone"],["Phoque","Otarie"],["Tortue de mer","Iguane marin"],
+  ["Anguille","Murène"],["Hippocampe","Poisson-clown"],["Corail","Algue"],["Crevette","Écrevisse"],
+  // Oiseaux
+  ["Aigle","Faucon"],["Perroquet","Perruche"],["Hibou","Chouette"],["Pingouin","Manchot"],
+  ["Corbeau","Corneille"],["Cygne","Oie"],["Flamant rose","Héron"],["Colibri","Libellule"],
+  ["Pigeon","Tourterelle"],["Autruche","Émeu"],["Toucan","Perroquet ara"],["Vautour","Charognard"],
+  // Insectes & petites bêtes
+  ["Fourmi","Termite"],["Abeille","Guêpe"],["Papillon","Mite"],["Coccinelle","Scarabée"],
+  ["Araignée","Scorpion"],["Sauterelle","Criquet"],["Mille-pattes","Chenille"],["Escargot","Limace"],
+  // Créatures fantastiques & légendaires
+  ["Fantôme","Squelette"],["Vampire","Zombie"],["Pirate","Ninja"],["Sorcière","Magicien"],
+  ["Dragon","Serpent géant"],["Licorne","Pégase"],["Sirène","Triton"],["Troll","Ogre"],
+  ["Elfe","Gnome"],["Loup-garou","Golem"],["Géant","Titan"],["Génie","Fée"],
+  // Métiers
+  ["Médecin","Infirmier"],["Pompier","Policier"],["Boulanger","Pâtissier"],["Menuisier","Charpentier"],
+  ["Facteur","Livreur"],["Coiffeur","Esthéticienne"],["Professeur","Instituteur"],["Avocat","Juge"],
+  ["Plombier","Électricien"],["Agriculteur","Éleveur"],["Journaliste","Photographe"],["Vétérinaire","Éleveur canin"],
+  ["Chirurgien","Dentiste"],["Cuisinier","Serveur"],["Pilote","Steward"],["Architecte","Ingénieur"],
+  ["Bibliothécaire","Libraire"],["Marin","Pêcheur"],["Astronaute","Cosmonaute"],["Jardinier","Paysagiste"],
+  // Sports
+  ["Football","Rugby"],["Basketball","Handball"],["Tennis","Badminton"],["Natation","Plongée"],
+  ["Ski","Snowboard"],["Cyclisme","Course à pied"],["Boxe","Karaté"],["Escalade","Randonnée"],
+  ["Golf","Croquet"],["Volleyball","Beach-volley"],["Judo","Lutte"],["Patinage","Roller"],
+  ["Aviron","Kayak"],["Surf","Bodyboard"],["Équitation","Voltige"],["Bowling","Pétanque"],
+  ["Gymnastique","Danse"],["Escrime","Tir à l'arc"],
+  // Transports
+  ["Voiture","Moto"],["Avion","Hélicoptère"],["Camion","Bus"],["Train","Tramway"],
+  ["Vélo","Trottinette"],["Bateau","Voilier"],["Métro","RER"],["Fusée","Satellite"],
+  ["Gondole","Kayak"],["Montgolfière","Planeur"],["Taxi","Covoiturage"],["Sous-marin","Bateau à moteur"],
+  // Nature & paysages
+  ["Montagne","Colline"],["Rivière","Lac"],["Île","Presqu'île"],["Cascade","Fontaine"],
+  ["Volcan","Geyser"],["Désert","Steppe"],["Forêt","Jungle"],["Grotte","Caverne"],
+  ["Falaise","Ravin"],["Vallée","Gorge"],["Plage","Dune"],["Marais","Étang"],
+  ["Glacier","Iceberg"],["Prairie","Savane"],["Récif","Lagon"],["Oasis","Mirage"],
+  // Météo & phénomènes
+  ["Neige","Pluie"],["Foudre","Tonnerre"],["Tornade","Ouragan"],["Comète","Météore"],
+  ["Arc-en-ciel","Aurore boréale"],["Brouillard","Brume"],["Grêle","Verglas"],["Canicule","Sécheresse"],
+  // Objets du quotidien
+  ["Stylo","Crayon"],["Téléphone","Tablette"],["Bougie","Lampe"],["Sac à dos","Valise"],
+  ["Parapluie","Poncho"],["Montre","Réveil"],["Miroir","Vitre"],["Coussin","Oreiller"],
+  ["Balai","Aspirateur"],["Ciseaux","Cutter"],["Boussole","Carte"],["Clé","Cadenas"],
+  ["Panier","Cabas"],["Thermos","Gourde"],["Échelle","Escabeau"],["Corde","Ficelle"],
+  // Technologie
+  ["Ordinateur","Tablette"],["Casque audio","Écouteurs"],["Robot","Androïde"],["Drone","Hélicoptère"],
+  ["Imprimante","Scanner"],["Manette","Clavier"],["Enceinte","Haut-parleur"],["Caméra","Appareil photo"],
+  ["Batterie","Chargeur"],["Antenne","Parabole"],
+  // Vêtements
+  ["Cape","Manteau"],["Kimono","Sari"],["Chapeau","Casquette"],["Écharpe","Foulard"],
+  ["Gants","Moufles"],["Bottes","Baskets"],["Costume","Smoking"],["Robe","Jupe"],
+  ["Pull","Gilet"],["Ceinture","Bretelles"],["Sandales","Tongs"],["Uniforme","Blouse"],
+  // Instruments de musique
+  ["Guitare","Violon"],["Piano","Clavier"],["Batterie","Percussion"],["Flûte","Clarinette"],
+  ["Trompette","Trombone"],["Harpe","Lyre"],["Accordéon","Orgue"],["Saxophone","Hautbois"],
+  // Bâtiments & lieux
+  ["Château","Palais"],["Bibliothèque","Librairie"],["Cathédrale","Église"],["Marché","Supermarché"],
+  ["Igloo","Cabane"],["Cirque","Théâtre"],["Jardin","Parc"],["Bureau","Atelier"],
+  ["Musée","Galerie"],["Aéroport","Gare"],["Hôpital","Clinique"],["Hôtel","Auberge"],
+  ["Prison","Forteresse"],["Ferme","Ranch"],["Phare","Tour"],["Moulin","Silo"],
+  // Corps humain & santé
+  ["Main","Pied"],["Œil","Oreille"],["Squelette","Muscle"],["Fièvre","Rhume"],
+  ["Pansement","Bandage"],["Lunettes","Loupe"],["Béquille","Fauteuil roulant"],["Vaccin","Médicament"],
+  // École & bureau
+  ["Cahier","Carnet"],["Trousse","Sac de cours"],["Tableau","Écran"],["Craie","Marqueur"],
+  ["Colle","Ruban adhésif"],["Règle","Équerre"],["Gomme","Correcteur"],["Agrafeuse","Perforatrice"],
+  // Jardin & outils
+  ["Marteau","Tournevis"],["Pelle","Râteau"],["Arrosoir","Tuyau"],["Tondeuse","Débroussailleuse"],
+  ["Serre","Potager"],["Champignon","Truffe"],["Cactus","Bambou"],["Tronçonneuse","Hache"],
+  // Jeux & loisirs
+  ["Trampoline","Balançoire"],["Cerf-volant","Frisbee"],["Toupie","Yoyo"],["Puzzle","Casse-tête"],
+  ["Dés","Cartes"],["Échecs","Dames"],["Marionnette","Poupée"],["Fléchettes","Billard"],
+  // Divers
+  ["Diamant","Cristal"],["Sable","Terre"],["Boussole","Carte routière"],["Trésor","Coffre"],
+  ["Statue","Sculpture"],["Encre","Peinture"],["Miel","Sirop d'érable"],["Perle","Coquillage"]
+];
+
+const ROLE_LABEL = {
+  civil:"Civil",
+  undercover:"Undercover",
+  mrwhite:"Mr. White",
+};
+const SPECIAL_LABEL = { detective:"Détective", jester:"Bouffon" };
+
+/* ---------------------------------------------------------
+   ÉTAT
+--------------------------------------------------------- */
+let setup = {
+  count: 6,
+  names: ["","","","","",""],
+  undercoverCount: 1,
+  mrWhite: false,
+  detective: false,
+  jester: false,
+  wordSource: "random", // "random" | "custom"
+  customCivil: "",
+  customUndercover: "",
+};
+
+let game = null; // objet de partie une fois lancée
+let screen = "setup"; // "setup" | "game"
+
+/* ---------------------------------------------------------
+   UTILITAIRES
+--------------------------------------------------------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function normalize(str){
+  return (str||"").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function el(html){
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstChild;
+}
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = "";
+  app.appendChild(screen === "setup" ? renderSetup() : renderGame());
+}
+
+/* ---------------------------------------------------------
+   ÉCRAN DE CONFIGURATION
+--------------------------------------------------------- */
+function maxUndercover(){
+  const base = setup.count - (setup.mrWhite?1:0) - (setup.detective?1:0) - (setup.jester?1:0) - 1;
+  return Math.max(1, base);
+}
+
+function validateSetup(){
+  const N = setup.count;
+  if(N < 3) return "Il faut au moins 3 joueurs.";
+  if(N > 20) return "20 joueurs maximum.";
+  const specialNeeded = (setup.detective?1:0) + (setup.jester?1:0);
+  const civilCount = N - setup.undercoverCount - (setup.mrWhite?1:0);
+  if(setup.undercoverCount < 1) return "Il faut au moins 1 undercover.";
+  if(civilCount < specialNeeded + 1) return "Pas assez de civils pour ce nombre d'undercover et de rôles spéciaux. Réduisez les undercover ou désactivez un rôle spécial.";
+  if(setup.wordSource === "custom"){
+    const a = setup.customCivil.trim(), b = setup.customUndercover.trim();
+    if(!a || !b) return "Entrez les deux mots du dossier personnalisé.";
+    if(normalize(a) === normalize(b)) return "Les deux mots personnalisés doivent être différents.";
+  }
+  return null;
+}
+
+function renderSetup(){
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(`
+    <div class="masthead">
+      <div class="eyebrow">Dossier confidentiel · Nouvelle partie</div>
+      <h1 class="title">SOUS COUVERTURE</h1>
+      <p class="subtitle">Un seul téléphone. Passez-le à chaque agent au bon moment.</p>
+    </div>
+  `));
+
+  const content = el(`<div class="content"></div>`);
+
+  // Bloc joueurs
+  const b1 = el(`
+    <section class="block">
+      <h2 class="block-title">Combien d'agents ce soir ?</h2>
+      <p class="block-desc">De 3 à 20 joueurs. Chacun verra son mot en privé, à son tour.</p>
+      <div class="stepper">
+        <button data-act="dec-count">−</button>
+        <div class="count">${setup.count}</div>
+        <button data-act="inc-count">+</button>
+      </div>
+      <div class="name-list" id="name-list"></div>
+    </section>
+  `);
+  const nameList = b1.querySelector('#name-list');
+  for(let i=0;i<setup.count;i++){
+    const row = el(`
+      <div class="name-row">
+        <div class="idx">${i+1}</div>
+        <input type="text" placeholder="Joueur ${i+1}" data-name-idx="${i}" value="${(setup.names[i]||"").replace(/"/g,'&quot;')}">
+      </div>
+    `);
+    nameList.appendChild(row);
+  }
+  content.appendChild(b1);
+
+  // Bloc rôles spéciaux
+  const b2 = el(`
+    <section class="block">
+      <h2 class="block-title">Rôles spéciaux</h2>
+      <p class="block-desc">Activez ou non chaque rôle. Ils s'ajoutent aux civils et undercover classiques.</p>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.undercoverCount>0?'on':''}" style="visibility:hidden"></div>
+        <div class="toggle-text" style="flex:1">
+          <div class="name">Undercover</div>
+          <div class="desc">Ont un mot proche mais différent de celui des civils. Doivent se fondre dans la masse.</div>
+          <div class="stepper-inline">
+            <button data-act="dec-uc">−</button>
+            <div class="n">${setup.undercoverCount}</div>
+            <button data-act="inc-uc">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.mrWhite?'on':''}" data-act="toggle-mrwhite"></div>
+        <div class="toggle-text">
+          <div class="name">Mr. White</div>
+          <div class="desc">N'a aucun mot et doit bluffer. S'il est éliminé, il tente de deviner le mot des civils pour renverser la partie.</div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.detective?'on':''}" data-act="toggle-detective"></div>
+        <div class="toggle-text">
+          <div class="name">Détective</div>
+          <div class="desc">Un civil qui, en secret, espionne un joueur au hasard pendant la révélation et apprend s'il est "Civil" ou "Suspect".</div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.jester?'on':''}" data-act="toggle-jester"></div>
+        <div class="toggle-text">
+          <div class="name">Bouffon</div>
+          <div class="desc">Un civil qui gagne seul s'il se fait éliminer par le vote. Il a intérêt à paraître louche !</div>
+        </div>
+      </div>
+    </section>
+  `);
+  content.appendChild(b2);
+
+  // Bloc mots
+  const b3 = el(`
+    <section class="block">
+      <h2 class="block-title">Le dossier (les mots)</h2>
+      <p class="block-desc">Choisissez une paire de mots au hasard, ou définissez la vôtre.</p>
+      <div class="choice-row">
+        <div class="choice ${setup.wordSource==='random'?'active':''}" data-act="src-random">Aléatoire</div>
+        <div class="choice ${setup.wordSource==='custom'?'active':''}" data-act="src-custom">Personnalisé</div>
+      </div>
+      ${setup.wordSource==='custom' ? `
+      <div class="custom-words">
+        <input type="text" placeholder="Mot des civils" id="cw-civil" value="${setup.customCivil.replace(/"/g,'&quot;')}">
+        <input type="text" placeholder="Mot des undercover" id="cw-uc" value="${setup.customUndercover.replace(/"/g,'&quot;')}">
+      </div>` : ``}
+    </section>
+  `);
+  content.appendChild(b3);
+
+  const err = validateSetup();
+  if(err){
+    content.appendChild(el(`<div class="error-box">${err}</div>`));
+  }
+
+  const startBtn = el(`<button class="btn btn-primary" ${err?'disabled':''}>Lancer la partie</button>`);
+  startBtn.addEventListener('click', ()=>{ if(!validateSetup()){ startGame(); } });
+  content.appendChild(el(`<div style="height:6px"></div>`));
+  content.appendChild(startBtn);
+  content.appendChild(el(`<div class="footer-note">DOSSIER N°${String(Math.floor(Math.random()*900+100))} · À USAGE INTERNE</div>`));
+
+  wrap.appendChild(content);
+
+  // Listeners
+  wrap.querySelector('[data-act="dec-count"]').onclick = ()=>{ setup.count = Math.max(3,setup.count-1); setup.names.length=setup.count; setup.undercoverCount = Math.min(setup.undercoverCount, maxUndercover()); render(); };
+  wrap.querySelector('[data-act="inc-count"]').onclick = ()=>{ setup.count = Math.min(20,setup.count+1); render(); };
+  wrap.querySelectorAll('[data-name-idx]').forEach(inp=>{
+    inp.addEventListener('input', e=>{ setup.names[+e.target.dataset.nameIdx] = e.target.value; });
+  });
+  wrap.querySelector('[data-act="dec-uc"]').onclick = ()=>{ setup.undercoverCount = Math.max(1, setup.undercoverCount-1); render(); };
+  wrap.querySelector('[data-act="inc-uc"]').onclick = ()=>{ setup.undercoverCount = Math.min(maxUndercover(), setup.undercoverCount+1); render(); };
+  wrap.querySelector('[data-act="toggle-mrwhite"]').onclick = ()=>{ setup.mrWhite = !setup.mrWhite; render(); };
+  wrap.querySelector('[data-act="toggle-detective"]').onclick = ()=>{ setup.detective = !setup.detective; render(); };
+  wrap.querySelector('[data-act="toggle-jester"]').onclick = ()=>{ setup.jester = !setup.jester; render(); };
+  wrap.querySelector('[data-act="src-random"]').onclick = ()=>{ setup.wordSource='random'; render(); };
+  wrap.querySelector('[data-act="src-custom"]').onclick = ()=>{ setup.wordSource='custom'; render(); };
+  const cwCivil = wrap.querySelector('#cw-civil');
+  const cwUc = wrap.querySelector('#cw-uc');
+  if(cwCivil) cwCivil.addEventListener('input', e=>{ setup.customCivil = e.target.value; });
+  if(cwUc) cwUc.addEventListener('input', e=>{ setup.customUndercover = e.target.value; });
+
+  return wrap;
+}
+
+/* ---------------------------------------------------------
+   LANCEMENT DE PARTIE
+--------------------------------------------------------- */
+function startGame(){
+  const N = setup.count;
+  const players = [];
+  for(let i=0;i<N;i++){
+    players.push({
+      id:i,
+      name: (setup.names[i]||"").trim() || `Joueur ${i+1}`,
+      wordRole: null,
+      special: null,
+      word: null,
+      alive: true,
+      hasSeen: false,
+      detectiveDone: false,
+      detectiveResult: null,
+    });
+  }
+
+  // construire les rôles
+  let roles = [];
+  if(setup.mrWhite) roles.push('mrwhite');
+  for(let i=0;i<setup.undercoverCount;i++) roles.push('undercover');
+  const civilSlots = N - roles.length;
+  let specials = [];
+  if(setup.detective) specials.push('detective');
+  if(setup.jester) specials.push('jester');
+  for(let i=0;i<civilSlots;i++) roles.push('civil');
+
+  roles = shuffle(roles);
+  players.forEach((p,i)=>{ p.wordRole = roles[i]; });
+
+  // assigner les rôles spéciaux parmi les civils
+  const civilPlayers = shuffle(players.filter(p=>p.wordRole==='civil'));
+  specials.forEach((s,i)=>{ if(civilPlayers[i]) civilPlayers[i].special = s; });
+
+  // mots
+  let civilWord, ucWord;
+  if(setup.wordSource === 'custom'){
+    civilWord = setup.customCivil.trim();
+    ucWord = setup.customUndercover.trim();
+  } else {
+    const pair = WORD_PAIRS[Math.floor(Math.random()*WORD_PAIRS.length)];
+    civilWord = pair[0]; ucWord = pair[1];
+  }
+  players.forEach(p=>{
+    if(p.wordRole==='civil') p.word = civilWord;
+    else if(p.wordRole==='undercover') p.word = ucWord;
+    else p.word = null;
+  });
+
+  game = {
+    players,
+    civilWord, ucWord,
+    round: 1,
+    phase: 'reveal',
+    revealIndex: 0,
+    revealCurrentShown: false,
+    pendingDetectivePick: false,
+    votingOrder: [],
+    votingIndex: 0,
+    votes: {},
+    lastEliminatedId: null,
+    tieMessage: null,
+    winner: null,
+  };
+  screen = 'game';
+  render();
+}
+
+/* ---------------------------------------------------------
+   ÉCRAN DE JEU — DISPATCH
+--------------------------------------------------------- */
+function renderGame(){
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(`
+    <div class="masthead">
+      <div class="eyebrow">Dossier confidentiel</div>
+      <h1 class="title" style="font-size:22px;">SOUS COUVERTURE</h1>
+      <p class="subtitle">Manche ${game.round} · ${game.players.filter(p=>p.alive).length} agents en jeu</p>
+    </div>
+  `));
+  const content = el(`<div class="content"></div>`);
+
+  switch(game.phase){
+    case 'reveal': content.appendChild(renderReveal()); break;
+    case 'detective-peek': content.appendChild(renderDetectivePeek()); break;
+    case 'discussion': content.appendChild(renderDiscussion()); break;
+    case 'voting': content.appendChild(renderVoting()); break;
+    case 'tie': content.appendChild(renderTie()); break;
+    case 'result': content.appendChild(renderResult()); break;
+    case 'mrwhite-guess': content.appendChild(renderMrWhiteGuess()); break;
+    case 'gameover': content.appendChild(renderGameOver()); break;
+  }
+  wrap.appendChild(content);
+  return wrap;
+}
+
+/* ---- Révélation des rôles ---- */
+function renderReveal(){
+  const p = game.players[game.revealIndex];
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="pass-instruction">
+      <div class="eyebrow">Passez le téléphone à</div>
+      <div class="to">${p.name}</div>
+      <div class="hint">Personne d'autre ne doit regarder l'écran.</div>
+    </div>
+  `));
+
+  let extra = "";
+  if(p.wordRole === 'mrwhite'){
+    extra = `<div class="label">Aucun mot</div><div class="word" style="font-size:20px;">MR. WHITE</div><div class="role-extra">Vous n'avez pas de mot. Écoutez les autres et bluffez. Si vous êtes éliminé, vous pourrez deviner le mot des civils pour gagner quand même.</div>`;
+  } else {
+    const roleTag = p.wordRole === 'undercover' ? "UNDERCOVER" : "CIVIL";
+    extra = `<div class="label">Votre mot</div><div class="word">${p.word}</div><div class="role-extra">${p.wordRole==='undercover' ? "Votre mot diffère de celui de la majorité. Fondez-vous dans la masse." : "Vous partagez ce mot avec les autres civils."}</div>`;
+    if(p.special === 'detective'){
+      extra += `<div class="role-extra" style="margin-top:8px;color:${'#8a5a1a'}"><strong>Vous êtes aussi le Détective.</strong> Après cette carte, vous choisirez un joueur à espionner.</div>`;
+    }
+    if(p.special === 'jester'){
+      extra += `<div class="role-extra" style="margin-top:8px;"><strong>Vous êtes aussi le Bouffon.</strong> Vous gagnez seul si le groupe vous élimine au vote.</div>`;
+    }
+  }
+
+  const card = el(`
+    <div class="dossier-card">
+      <div class="dossier-cover">
+        <div class="stamp">DOSSIER</div>
+        <div class="cta">Maintenir pour révéler</div>
+      </div>
+      <div class="dossier-face hidden">${extra}</div>
+    </div>
+  `);
+  const cover = card.querySelector('.dossier-cover');
+  const face = card.querySelector('.dossier-face');
+  const show = ()=>{ cover.classList.add('hidden'); face.classList.remove('hidden'); p.hasSeen = true; updateNextBtn(); };
+  const hide = ()=>{ cover.classList.remove('hidden'); face.classList.add('hidden'); };
+  cover.addEventListener('pointerdown', show);
+  cover.addEventListener('pointerup', hide);
+  cover.addEventListener('pointerleave', hide);
+  face.addEventListener('pointerup', hide);
+  face.addEventListener('pointerleave', hide);
+  box.appendChild(card);
+
+  box.appendChild(el(`<div class="seen-note" id="seen-note">${p.hasSeen ? "Rôle consulté." : "Maintenez la carte appuyée pour lire votre rôle."}</div>`));
+
+  const nextBtn = el(`<button class="btn btn-primary" id="next-reveal-btn" ${p.hasSeen?'':'disabled'}>J'ai vu, joueur suivant</button>`);
+  nextBtn.addEventListener('click', ()=>{
+    if(p.special === 'detective' && !p.detectiveDone){
+      game.phase = 'detective-peek';
+      game.pendingDetectivePick = p.id;
+    } else {
+      game.revealIndex++;
+      if(game.revealIndex >= game.players.length){
+        game.phase = 'discussion';
+      }
+    }
+    render();
+  });
+  box.appendChild(nextBtn);
+
+  function updateNextBtn(){
+    const b = document.getElementById('next-reveal-btn');
+    const n = document.getElementById('seen-note');
+    if(b) b.disabled = false;
+    if(n) n.textContent = "Rôle consulté.";
+  }
+
+  return box;
+}
+
+/* ---- Espionnage du Détective ---- */
+function renderDetectivePeek(){
+  const detId = game.pendingDetectivePick;
+  const det = game.players.find(p=>p.id===detId);
+  const box = el(`<div></div>`);
+
+  if(!det.detectiveResult){
+    box.appendChild(el(`
+      <div class="pass-instruction">
+        <div class="eyebrow">${det.name} — Détective</div>
+        <div class="to" style="font-size:18px;">Choisissez un joueur à espionner</div>
+      </div>
+    `));
+    const grid = el(`<div class="grid-players"></div>`);
+    game.players.filter(p=>p.id!==det.id).forEach(p=>{
+      const tile = el(`<div class="player-tile">${p.name}</div>`);
+      tile.addEventListener('click', ()=>{
+        const result = p.wordRole === 'civil' ? 'Civil' : 'Suspect';
+        det.detectiveResult = { targetName: p.name, result };
+        render();
+      });
+      grid.appendChild(tile);
+    });
+    box.appendChild(grid);
+    return box;
+  }
+
+  box.appendChild(el(`
+    <div class="pass-instruction">
+      <div class="eyebrow">${det.name} — Résultat de l'enquête</div>
+      <div class="hint">Maintenez pour révéler, relâchez pour dissimuler.</div>
+    </div>
+  `));
+  const card = el(`
+    <div class="dossier-card" style="height:180px;">
+      <div class="dossier-cover">
+        <div class="stamp">RAPPORT</div>
+        <div class="cta">Maintenir pour révéler</div>
+      </div>
+      <div class="dossier-face hidden">
+        <div class="label">${det.detectiveResult.targetName}</div>
+        <div class="word" style="font-size:26px;">${det.detectiveResult.result}</div>
+      </div>
+    </div>
+  `);
+  const cover = card.querySelector('.dossier-cover');
+  const face = card.querySelector('.dossier-face');
+  const show = ()=>{ cover.classList.add('hidden'); face.classList.remove('hidden'); };
+  const hide = ()=>{ cover.classList.remove('hidden'); face.classList.add('hidden'); };
+  cover.addEventListener('pointerdown', show);
+  cover.addEventListener('pointerup', hide);
+  cover.addEventListener('pointerleave', hide);
+  face.addEventListener('pointerup', hide);
+  face.addEventListener('pointerleave', hide);
+  box.appendChild(card);
+
+  const btn = el(`<button class="btn btn-primary">Continuer</button>`);
+  btn.addEventListener('click', ()=>{
+    det.detectiveDone = true;
+    game.phase = 'reveal';
+    game.revealIndex++;
+    if(game.revealIndex >= game.players.length) game.phase = 'discussion';
+    render();
+  });
+  box.appendChild(btn);
+  return box;
+}
+
+/* ---- Discussion ---- */
+function renderDiscussion(){
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <section class="block">
+      <h2 class="block-title">Tour de parole</h2>
+      <p class="block-desc">Chacun décrit son mot à voix haute, sans le dire directement. Un tour, dans l'ordre ci-dessous, puis on vote.</p>
+      <ol class="speak-order"></ol>
+    </section>
+  `));
+  const list = box.querySelector('.speak-order');
+  game.players.filter(p=>p.alive).forEach((p,i)=>{
+    list.appendChild(el(`<li><div class="n">${i+1}</div><div>${p.name}</div></li>`));
+  });
+  const btn = el(`<button class="btn btn-primary">Commencer le vote</button>`);
+  btn.addEventListener('click', ()=>{
+    game.votingOrder = game.players.filter(p=>p.alive).map(p=>p.id);
+    game.votingIndex = 0;
+    game.votes = {};
+    game.phase = 'voting';
+    render();
+  });
+  box.appendChild(btn);
+  return box;
+}
+
+/* ---- Vote ---- */
+function renderVoting(){
+  const voterId = game.votingOrder[game.votingIndex];
+  const voter = game.players.find(p=>p.id===voterId);
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="pass-instruction">
+      <div class="eyebrow">Passez le téléphone à</div>
+      <div class="to">${voter.name}</div>
+      <div class="hint">Qui soupçonnez-vous ?</div>
+    </div>
+  `));
+  const grid = el(`<div class="grid-players"></div>`);
+  let selected = null;
+  game.players.filter(p=>p.alive && p.id!==voter.id).forEach(p=>{
+    const tile = el(`<div class="player-tile">${p.name}</div>`);
+    tile.addEventListener('click', ()=>{
+      grid.querySelectorAll('.player-tile').forEach(t=>t.classList.remove('selected'));
+      tile.classList.add('selected');
+      selected = p.id;
+      confirmBtn.disabled = false;
+    });
+    grid.appendChild(tile);
+  });
+  box.appendChild(grid);
+
+  const confirmBtn = el(`<button class="btn btn-primary" style="margin-top:16px;" disabled>Confirmer mon vote</button>`);
+  confirmBtn.addEventListener('click', ()=>{
+    game.votes[voter.id] = selected;
+    game.votingIndex++;
+    if(game.votingIndex >= game.votingOrder.length){
+      tallyVotes();
+    }
+    render();
+  });
+  box.appendChild(confirmBtn);
+  return box;
+}
+
+function tallyVotes(){
+  const counts = {};
+  Object.values(game.votes).forEach(targetId=>{
+    counts[targetId] = (counts[targetId]||0)+1;
+  });
+  let max = 0;
+  Object.values(counts).forEach(c=>{ if(c>max) max=c; });
+  const topIds = Object.keys(counts).filter(id=>counts[id]===max).map(Number);
+  if(topIds.length > 1){
+    game.tieMessage = topIds.map(id=>game.players.find(p=>p.id===id).name).join(" et ");
+    game.phase = 'tie';
+  } else {
+    game.lastEliminatedId = topIds[0];
+    game.players.find(p=>p.id===topIds[0]).alive = false;
+    game.phase = 'result';
+  }
+}
+
+function renderTie(){
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="winner-banner">
+      <div class="big" style="font-size:19px;">Égalité</div>
+      <div class="sub">${game.tieMessage} sont à égalité. Personne n'est éliminé ce tour.</div>
+    </div>
+  `));
+  const btn = el(`<button class="btn btn-primary">Nouveau tour de parole</button>`);
+  btn.addEventListener('click', ()=>{ game.round++; game.phase='discussion'; render(); });
+  box.appendChild(btn);
+  return box;
+}
+
+/* ---- Résultat de l'élimination ---- */
+function renderResult(){
+  const p = game.players.find(pl=>pl.id===game.lastEliminatedId);
+  const box = el(`<div></div>`);
+  const roleName = ROLE_LABEL[p.wordRole] + (p.special ? ` · ${SPECIAL_LABEL[p.special]}` : "");
+  box.appendChild(el(`
+    <div class="result-reveal">
+      <div class="stamp-big">ÉLIMINÉ</div>
+      <div class="who">${p.name}</div>
+      <div class="role-tag">${roleName}</div>
+      ${p.word ? `<div class="word-was">« ${p.word} »</div>` : `<div class="word-was">Aucun mot</div>`}
+    </div>
+  `));
+
+  const btn = el(`<button class="btn btn-primary">Continuer</button>`);
+  btn.addEventListener('click', ()=>{
+    if(p.special === 'jester'){
+      game.winner = 'jester';
+      game.phase = 'gameover';
+    } else {
+      resolveWinCondition();
+    }
+    render();
+  });
+  box.appendChild(btn);
+  return box;
+}
+
+function resolveWinCondition(){
+  const alive = game.players.filter(p=>p.alive);
+  const threat = alive.filter(p=>p.wordRole==='undercover'||p.wordRole==='mrwhite').length;
+  const civilSide = alive.filter(p=>p.wordRole==='civil').length;
+  if(threat === 0){
+    const hasMrWhite = game.players.some(p=>p.wordRole==='mrwhite');
+    if(hasMrWhite){
+      // Dernière chance : Mr. White devine le mot des civils avant que la victoire soit actée.
+      game.phase = 'mrwhite-guess';
+    } else {
+      game.winner = 'civils'; game.phase = 'gameover';
+    }
+  } else if(threat >= civilSide){
+    game.winner = 'undercover'; game.phase = 'gameover';
+  } else {
+    game.round++; game.phase = 'discussion';
+  }
+}
+
+/* ---- Devinette de Mr. White (dernière chance, en fin de partie) ---- */
+function renderMrWhiteGuess(){
+  const mw = game.players.find(p=>p.wordRole==='mrwhite');
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="pass-instruction">
+      <div class="eyebrow">Passez le téléphone à</div>
+      <div class="to">${mw.name}</div>
+      <div class="hint">Les civils ont éliminé tous les autres suspects.</div>
+    </div>
+  `));
+  box.appendChild(el(`
+    <section class="block">
+      <h2 class="block-title">La dernière carte de Mr. White</h2>
+      <p class="block-desc">Vous n'aviez aucun mot de toute la partie. Devinez le mot des civils pour renverser la victoire.</p>
+      <textarea id="guess-input" rows="1" placeholder="Votre proposition..."></textarea>
+    </section>
+  `));
+  const btn = el(`<button class="btn btn-primary">Valider la proposition</button>`);
+  btn.addEventListener('click', ()=>{
+    const guess = box.querySelector('#guess-input').value;
+    if(normalize(guess) === normalize(game.civilWord)){
+      game.winner = 'undercover';
+    } else {
+      game.winner = 'civils';
+    }
+    game.phase = 'gameover';
+    render();
+  });
+  box.appendChild(btn);
+  return box;
+}
+
+/* ---- Fin de partie ---- */
+function renderGameOver(){
+  const box = el(`<div></div>`);
+  const titles = {
+    civils: ["Les civils gagnent","L'infiltré a été démasqué à temps."],
+    undercover: ["Les undercover gagnent","Ils ont survécu jusqu'à égaler les civils."],
+    jester: ["Le Bouffon gagne","Il voulait être éliminé — mission accomplie."],
+  };
+  const [big, sub] = titles[game.winner];
+  box.appendChild(el(`
+    <div class="winner-banner">
+      <div class="big">${big}</div>
+      <div class="sub">${sub}</div>
+    </div>
+  `));
+  box.appendChild(el(`<h2 class="block-title">Dossier final</h2>`));
+  const list = el(`<ul class="role-list"></ul>`);
+  game.players.forEach(p=>{
+    const role = ROLE_LABEL[p.wordRole] + (p.special ? ` · ${SPECIAL_LABEL[p.special]}` : "");
+    list.appendChild(el(`
+      <li>
+        <span class="rn">${p.name}${p.alive?"":" (éliminé)"}</span>
+        <span class="rr">${role}${p.word?(" — "+p.word):""}</span>
+      </li>
+    `));
+  });
+  box.appendChild(list);
+
+  const row = el(`<div class="btn-row"></div>`);
+  const replay = el(`<button class="btn btn-primary">Rejouer (mêmes agents)</button>`);
+  replay.addEventListener('click', ()=>{ startGame(); });
+  const reset = el(`<button class="btn btn-secondary">Nouvelle configuration</button>`);
+  reset.addEventListener('click', ()=>{ screen='setup'; render(); });
+  row.appendChild(replay); row.appendChild(reset);
+  box.appendChild(row);
+  return box;
+}
+
+/* ---------------------------------------------------------
+   DÉMARRAGE
+--------------------------------------------------------- */
+render();
+</script>
+</body>
+</html>
