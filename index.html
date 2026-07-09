@@ -330,7 +330,7 @@ const ROLE_LABEL = {
   undercover:"Undercover",
   mrwhite:"Mr. White",
 };
-const SPECIAL_LABEL = { detective:"Détective", jester:"Bouffon" };
+const SPECIAL_LABEL = { detective:"Détective", jester:"Bouffon", protector:"Garde du corps", avenger:"Vengeur" };
 
 /* ---------------------------------------------------------
    ÉTAT
@@ -342,6 +342,9 @@ let setup = {
   mrWhite: false,
   detective: false,
   jester: false,
+  lovers: false,
+  protector: false,
+  avenger: false,
   wordSource: "random", // "random" | "custom"
   customCivil: "",
   customUndercover: "",
@@ -379,7 +382,7 @@ function render(){
    ÉCRAN DE CONFIGURATION
 --------------------------------------------------------- */
 function maxUndercover(){
-  const base = setup.count - (setup.mrWhite?1:0) - (setup.detective?1:0) - (setup.jester?1:0) - 1;
+  const base = setup.count - (setup.mrWhite?1:0) - (setup.detective?1:0) - (setup.jester?1:0) - (setup.protector?1:0) - (setup.avenger?1:0) - 1;
   return Math.max(1, base);
 }
 
@@ -387,7 +390,7 @@ function validateSetup(){
   const N = setup.count;
   if(N < 3) return "Il faut au moins 3 joueurs.";
   if(N > 20) return "20 joueurs maximum.";
-  const specialNeeded = (setup.detective?1:0) + (setup.jester?1:0);
+  const specialNeeded = (setup.detective?1:0) + (setup.jester?1:0) + (setup.protector?1:0) + (setup.avenger?1:0);
   const civilCount = N - setup.undercoverCount - (setup.mrWhite?1:0);
   if(setup.undercoverCount < 1) return "Il faut au moins 1 undercover.";
   if(civilCount < specialNeeded + 1) return "Pas assez de civils pour ce nombre d'undercover et de rôles spéciaux. Réduisez les undercover ou désactivez un rôle spécial.";
@@ -478,6 +481,30 @@ function renderSetup(){
           <div class="desc">Un civil qui gagne seul s'il se fait éliminer par le vote. Il a intérêt à paraître louche !</div>
         </div>
       </div>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.lovers?'on':''}" data-act="toggle-lovers"></div>
+        <div class="toggle-text">
+          <div class="name">Amoureux</div>
+          <div class="desc">Deux joueurs tirés au sort, dans n'importe quel camp. Si l'un est éliminé, l'autre l'est aussi par chagrin. S'ils restent tous les deux seuls en vie, ils gagnent ensemble, peu importe leur camp.</div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.protector?'on':''}" data-act="toggle-protector"></div>
+        <div class="toggle-text">
+          <div class="name">Garde du corps</div>
+          <div class="desc">Un civil qui, à chaque tour, choisit en secret un joueur à protéger. Si ce joueur est le plus voté, il est épargné et personne n'est éliminé ce tour-là.</div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="switch ${setup.avenger?'on':''}" data-act="toggle-avenger"></div>
+        <div class="toggle-text">
+          <div class="name">Vengeur</div>
+          <div class="desc">Un civil qui, s'il est éliminé, désigne aussitôt un autre joueur à emmener avec lui.</div>
+        </div>
+      </div>
     </section>
   `);
   content.appendChild(b2);
@@ -524,6 +551,9 @@ function renderSetup(){
   wrap.querySelector('[data-act="toggle-mrwhite"]').onclick = ()=>{ setup.mrWhite = !setup.mrWhite; render(); };
   wrap.querySelector('[data-act="toggle-detective"]').onclick = ()=>{ setup.detective = !setup.detective; render(); };
   wrap.querySelector('[data-act="toggle-jester"]').onclick = ()=>{ setup.jester = !setup.jester; render(); };
+  wrap.querySelector('[data-act="toggle-lovers"]').onclick = ()=>{ setup.lovers = !setup.lovers; render(); };
+  wrap.querySelector('[data-act="toggle-protector"]').onclick = ()=>{ setup.protector = !setup.protector; render(); };
+  wrap.querySelector('[data-act="toggle-avenger"]').onclick = ()=>{ setup.avenger = !setup.avenger; render(); };
   wrap.querySelector('[data-act="src-random"]').onclick = ()=>{ setup.wordSource='random'; render(); };
   wrap.querySelector('[data-act="src-custom"]').onclick = ()=>{ setup.wordSource='custom'; render(); };
   const cwCivil = wrap.querySelector('#cw-civil');
@@ -551,6 +581,8 @@ function startGame(){
       hasSeen: false,
       detectiveDone: false,
       detectiveResult: null,
+      loverId: null,
+      avengeUsed: false,
     });
   }
 
@@ -562,6 +594,8 @@ function startGame(){
   let specials = [];
   if(setup.detective) specials.push('detective');
   if(setup.jester) specials.push('jester');
+  if(setup.protector) specials.push('protector');
+  if(setup.avenger) specials.push('avenger');
   for(let i=0;i<civilSlots;i++) roles.push('civil');
 
   roles = shuffle(roles);
@@ -570,6 +604,13 @@ function startGame(){
   // assigner les rôles spéciaux parmi les civils
   const civilPlayers = shuffle(players.filter(p=>p.wordRole==='civil'));
   specials.forEach((s,i)=>{ if(civilPlayers[i]) civilPlayers[i].special = s; });
+
+  // amoureux : deux joueurs au hasard, tous camps confondus
+  if(setup.lovers && players.length >= 2){
+    const pair = shuffle(players.slice(0,players.length)).slice(0,2);
+    pair[0].loverId = pair[1].id;
+    pair[1].loverId = pair[0].id;
+  }
 
   // mots
   let civilWord, ucWord;
@@ -597,8 +638,13 @@ function startGame(){
     votingOrder: [],
     votingIndex: 0,
     votes: {},
-    lastEliminatedId: null,
+    lastEliminatedIds: [],
+    mrWhiteGuessed: false,
     tieMessage: null,
+    protectedId: null,
+    protectedName: null,
+    pendingAvengerId: null,
+    avengerKillIds: [],
     winner: null,
   };
   screen = 'game';
@@ -623,9 +669,13 @@ function renderGame(){
     case 'reveal': content.appendChild(renderReveal()); break;
     case 'detective-peek': content.appendChild(renderDetectivePeek()); break;
     case 'discussion': content.appendChild(renderDiscussion()); break;
+    case 'protect-pick': content.appendChild(renderProtectPick()); break;
     case 'voting': content.appendChild(renderVoting()); break;
     case 'tie': content.appendChild(renderTie()); break;
+    case 'protected': content.appendChild(renderProtected()); break;
     case 'result': content.appendChild(renderResult()); break;
+    case 'avenger-pick': content.appendChild(renderAvengerPick()); break;
+    case 'avenger-result': content.appendChild(renderAvengerResult()); break;
     case 'mrwhite-guess': content.appendChild(renderMrWhiteGuess()); break;
     case 'gameover': content.appendChild(renderGameOver()); break;
   }
@@ -657,6 +707,16 @@ function renderReveal(){
     if(p.special === 'jester'){
       extra += `<div class="role-extra" style="margin-top:8px;"><strong>Vous êtes aussi le Bouffon.</strong> Vous gagnez seul si le groupe vous élimine au vote.</div>`;
     }
+    if(p.special === 'protector'){
+      extra += `<div class="role-extra" style="margin-top:8px;"><strong>Vous êtes aussi le Garde du corps.</strong> Chaque tour, avant le vote, vous choisirez en secret un joueur à protéger.</div>`;
+    }
+    if(p.special === 'avenger'){
+      extra += `<div class="role-extra" style="margin-top:8px;"><strong>Vous êtes aussi le Vengeur.</strong> Si vous êtes éliminé, vous désignerez aussitôt un autre joueur à emmener avec vous.</div>`;
+    }
+  }
+  if(p.loverId !== null){
+    const partner = game.players.find(pl=>pl.id===p.loverId);
+    extra += `<div class="role-extra" style="margin-top:8px;"><strong>Vous êtes amoureux de ${partner.name}.</strong> Si l'un de vous est éliminé, l'autre l'est aussi. Si vous restez tous les deux seuls en vie, vous gagnez ensemble, peu importe vos camps.</div>`;
   }
 
   const card = el(`
@@ -788,15 +848,57 @@ function renderDiscussion(){
   game.players.filter(p=>p.alive).forEach((p,i)=>{
     list.appendChild(el(`<li><div class="n">${i+1}</div><div>${p.name}</div></li>`));
   });
-  const btn = el(`<button class="btn btn-primary">Commencer le vote</button>`);
+  const hasProtector = game.players.some(p=>p.alive && p.special==='protector');
+  const btn = el(`<button class="btn btn-primary">${hasProtector ? "Continuer" : "Commencer le vote"}</button>`);
   btn.addEventListener('click', ()=>{
+    if(hasProtector){
+      game.phase = 'protect-pick';
+    } else {
+      game.votingOrder = game.players.filter(p=>p.alive).map(p=>p.id);
+      game.votingIndex = 0;
+      game.votes = {};
+      game.phase = 'voting';
+    }
+    render();
+  });
+  box.appendChild(btn);
+  return box;
+}
+
+/* ---- Garde du corps : choix de la protection ---- */
+function renderProtectPick(){
+  const protector = game.players.find(p=>p.alive && p.special==='protector');
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="pass-instruction">
+      <div class="eyebrow">Passez le téléphone à</div>
+      <div class="to">${protector.name}</div>
+      <div class="hint">Garde du corps — qui protégez-vous ce tour ?</div>
+    </div>
+  `));
+  const grid = el(`<div class="grid-players"></div>`);
+  let selected = null;
+  game.players.filter(p=>p.alive).forEach(p=>{
+    const tile = el(`<div class="player-tile">${p.name}${p.id===protector.id ? " (vous)" : ""}</div>`);
+    tile.addEventListener('click', ()=>{
+      grid.querySelectorAll('.player-tile').forEach(t=>t.classList.remove('selected'));
+      tile.classList.add('selected');
+      selected = p.id;
+      confirmBtn.disabled = false;
+    });
+    grid.appendChild(tile);
+  });
+  box.appendChild(grid);
+  const confirmBtn = el(`<button class="btn btn-primary" style="margin-top:16px;" disabled>Confirmer la protection</button>`);
+  confirmBtn.addEventListener('click', ()=>{
+    game.protectedId = selected;
     game.votingOrder = game.players.filter(p=>p.alive).map(p=>p.id);
     game.votingIndex = 0;
     game.votes = {};
     game.phase = 'voting';
     render();
   });
-  box.appendChild(btn);
+  box.appendChild(confirmBtn);
   return box;
 }
 
@@ -839,6 +941,20 @@ function renderVoting(){
   return box;
 }
 
+function eliminateWithGrief(id){
+  const ids = [id];
+  const pl = game.players.find(p=>p.id===id);
+  pl.alive = false;
+  if(pl.loverId !== null){
+    const partner = game.players.find(p=>p.id===pl.loverId);
+    if(partner && partner.alive){
+      partner.alive = false;
+      ids.push(partner.id);
+    }
+  }
+  return ids;
+}
+
 function tallyVotes(){
   const counts = {};
   Object.values(game.votes).forEach(targetId=>{
@@ -850,9 +966,11 @@ function tallyVotes(){
   if(topIds.length > 1){
     game.tieMessage = topIds.map(id=>game.players.find(p=>p.id===id).name).join(" et ");
     game.phase = 'tie';
+  } else if(game.protectedId !== null && topIds[0] === game.protectedId){
+    game.protectedName = game.players.find(p=>p.id===topIds[0]).name;
+    game.phase = 'protected';
   } else {
-    game.lastEliminatedId = topIds[0];
-    game.players.find(p=>p.id===topIds[0]).alive = false;
+    game.lastEliminatedIds = eliminateWithGrief(topIds[0]);
     game.phase = 'result';
   }
 }
@@ -866,14 +984,30 @@ function renderTie(){
     </div>
   `));
   const btn = el(`<button class="btn btn-primary">Nouveau tour de parole</button>`);
-  btn.addEventListener('click', ()=>{ game.round++; game.phase='discussion'; render(); });
+  btn.addEventListener('click', ()=>{ game.round++; game.protectedId=null; game.phase='discussion'; render(); });
+  box.appendChild(btn);
+  return box;
+}
+
+function renderProtected(){
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="winner-banner">
+      <div class="big" style="font-size:19px;">Protection réussie</div>
+      <div class="sub">${game.protectedName} était le plus visé par le vote, mais le Garde du corps veillait. Personne n'est éliminé ce tour.</div>
+    </div>
+  `));
+  const btn = el(`<button class="btn btn-primary">Nouveau tour de parole</button>`);
+  btn.addEventListener('click', ()=>{ game.round++; game.protectedId=null; game.phase='discussion'; render(); });
   box.appendChild(btn);
   return box;
 }
 
 /* ---- Résultat de l'élimination ---- */
 function renderResult(){
-  const p = game.players.find(pl=>pl.id===game.lastEliminatedId);
+  const ids = game.lastEliminatedIds;
+  const p = game.players.find(pl=>pl.id===ids[0]);
+  const grief = ids[1] !== undefined ? game.players.find(pl=>pl.id===ids[1]) : null;
   const box = el(`<div></div>`);
   const roleName = ROLE_LABEL[p.wordRole] + (p.special ? ` · ${SPECIAL_LABEL[p.special]}` : "");
   box.appendChild(el(`
@@ -884,19 +1018,119 @@ function renderResult(){
       ${p.word ? `<div class="word-was">« ${p.word} »</div>` : `<div class="word-was">Aucun mot</div>`}
     </div>
   `));
+  if(grief){
+    const griefRole = ROLE_LABEL[grief.wordRole] + (grief.special ? ` · ${SPECIAL_LABEL[grief.special]}` : "");
+    box.appendChild(el(`
+      <div class="result-reveal">
+        <div class="stamp-big" style="border-color:var(--muted);color:var(--muted);">MORT DE CHAGRIN</div>
+        <div class="who">${grief.name}</div>
+        <div class="role-tag">${griefRole}</div>
+        ${grief.word ? `<div class="word-was">« ${grief.word} »</div>` : `<div class="word-was">Aucun mot</div>`}
+      </div>
+    `));
+  }
 
   const btn = el(`<button class="btn btn-primary">Continuer</button>`);
   btn.addEventListener('click', ()=>{
-    if(p.special === 'jester'){
-      game.winner = 'jester';
-      game.phase = 'gameover';
-    } else {
-      resolveWinCondition();
-    }
-    render();
+    const eliminatedNow = ids.map(id=>game.players.find(pl=>pl.id===id));
+    handleEliminationContinuation(eliminatedNow);
   });
   box.appendChild(btn);
   return box;
+}
+
+/* ---- Vengeur : choix de la cible ---- */
+function renderAvengerPick(){
+  const avenger = game.players.find(p=>p.id===game.pendingAvengerId);
+  const box = el(`<div></div>`);
+  box.appendChild(el(`
+    <div class="pass-instruction">
+      <div class="eyebrow">${avenger.name} — Vengeur</div>
+      <div class="to" style="font-size:18px;">Qui emmenez-vous avec vous ?</div>
+      <div class="hint">Vous venez d'être éliminé. Choisissez une cible.</div>
+    </div>
+  `));
+  const grid = el(`<div class="grid-players"></div>`);
+  game.players.filter(p=>p.alive).forEach(p=>{
+    const tile = el(`<div class="player-tile">${p.name}</div>`);
+    tile.addEventListener('click', ()=>{
+      game.avengerKillIds = eliminateWithGrief(p.id);
+      game.phase = 'avenger-result';
+      render();
+    });
+    grid.appendChild(tile);
+  });
+  box.appendChild(grid);
+  return box;
+}
+
+function renderAvengerResult(){
+  const ids = game.avengerKillIds;
+  const p = game.players.find(pl=>pl.id===ids[0]);
+  const grief = ids[1] !== undefined ? game.players.find(pl=>pl.id===ids[1]) : null;
+  const box = el(`<div></div>`);
+  const roleName = ROLE_LABEL[p.wordRole] + (p.special ? ` · ${SPECIAL_LABEL[p.special]}` : "");
+  box.appendChild(el(`
+    <div class="result-reveal">
+      <div class="stamp-big">EMMENÉ PAR VENGEANCE</div>
+      <div class="who">${p.name}</div>
+      <div class="role-tag">${roleName}</div>
+      ${p.word ? `<div class="word-was">« ${p.word} »</div>` : `<div class="word-was">Aucun mot</div>`}
+    </div>
+  `));
+  if(grief){
+    const griefRole = ROLE_LABEL[grief.wordRole] + (grief.special ? ` · ${SPECIAL_LABEL[grief.special]}` : "");
+    box.appendChild(el(`
+      <div class="result-reveal">
+        <div class="stamp-big" style="border-color:var(--muted);color:var(--muted);">MORT DE CHAGRIN</div>
+        <div class="who">${grief.name}</div>
+        <div class="role-tag">${griefRole}</div>
+        ${grief.word ? `<div class="word-was">« ${grief.word} »</div>` : `<div class="word-was">Aucun mot</div>`}
+      </div>
+    `));
+  }
+  const btn = el(`<button class="btn btn-primary">Continuer</button>`);
+  btn.addEventListener('click', ()=>{
+    const eliminatedNow = ids.map(id=>game.players.find(pl=>pl.id===id));
+    handleEliminationContinuation(eliminatedNow);
+  });
+  box.appendChild(btn);
+  return box;
+}
+
+/* ---- Suite commune après toute élimination ---- */
+function handleEliminationContinuation(eliminatedNow){
+  const jesterOut = eliminatedNow.find(pl=>pl.special === 'jester');
+  if(jesterOut){
+    game.winner = 'jester';
+    game.phase = 'gameover';
+    render();
+    return;
+  }
+  const avengerOut = eliminatedNow.find(pl=>pl.special === 'avenger' && !pl.avengeUsed);
+  const aliveOthers = game.players.filter(pl=>pl.alive);
+  if(avengerOut && aliveOthers.length > 0){
+    avengerOut.avengeUsed = true;
+    game.pendingAvengerId = avengerOut.id;
+    game.phase = 'avenger-pick';
+    render();
+    return;
+  }
+  const stillAlive = game.players.filter(pl=>pl.alive);
+  if(stillAlive.length === 2 && stillAlive[0].loverId === stillAlive[1].id){
+    game.winner = 'amoureux';
+    game.phase = 'gameover';
+    render();
+    return;
+  }
+  const mrWhiteOut = eliminatedNow.find(pl=>pl.wordRole === 'mrwhite');
+  if(mrWhiteOut && !game.mrWhiteGuessed){
+    game.phase = 'mrwhite-guess';
+    render();
+    return;
+  }
+  resolveWinCondition();
+  render();
 }
 
 function resolveWinCondition(){
@@ -905,7 +1139,7 @@ function resolveWinCondition(){
   const civilSide = alive.filter(p=>p.wordRole==='civil').length;
   if(threat === 0){
     const hasMrWhite = game.players.some(p=>p.wordRole==='mrwhite');
-    if(hasMrWhite){
+    if(hasMrWhite && !game.mrWhiteGuessed){
       // Dernière chance : Mr. White devine le mot des civils avant que la victoire soit actée.
       game.phase = 'mrwhite-guess';
     } else {
@@ -918,7 +1152,7 @@ function resolveWinCondition(){
   }
 }
 
-/* ---- Devinette de Mr. White (dernière chance, en fin de partie) ---- */
+/* ---- Devinette de Mr. White (dès son élimination) ---- */
 function renderMrWhiteGuess(){
   const mw = game.players.find(p=>p.wordRole==='mrwhite');
   const box = el(`<div></div>`);
@@ -926,25 +1160,26 @@ function renderMrWhiteGuess(){
     <div class="pass-instruction">
       <div class="eyebrow">Passez le téléphone à</div>
       <div class="to">${mw.name}</div>
-      <div class="hint">Les civils ont éliminé tous les autres suspects.</div>
+      <div class="hint">Dernière chance avant de quitter la partie.</div>
     </div>
   `));
   box.appendChild(el(`
     <section class="block">
-      <h2 class="block-title">La dernière carte de Mr. White</h2>
-      <p class="block-desc">Vous n'aviez aucun mot de toute la partie. Devinez le mot des civils pour renverser la victoire.</p>
+      <h2 class="block-title">La carte de Mr. White</h2>
+      <p class="block-desc">Vous n'aviez aucun mot. Devinez le mot des civils : si vous trouvez, votre camp gagne quand même.</p>
       <textarea id="guess-input" rows="1" placeholder="Votre proposition..."></textarea>
     </section>
   `));
   const btn = el(`<button class="btn btn-primary">Valider la proposition</button>`);
   btn.addEventListener('click', ()=>{
     const guess = box.querySelector('#guess-input').value;
+    game.mrWhiteGuessed = true;
     if(normalize(guess) === normalize(game.civilWord)){
       game.winner = 'undercover';
+      game.phase = 'gameover';
     } else {
-      game.winner = 'civils';
+      resolveWinCondition();
     }
-    game.phase = 'gameover';
     render();
   });
   box.appendChild(btn);
@@ -958,6 +1193,7 @@ function renderGameOver(){
     civils: ["Les civils gagnent","L'infiltré a été démasqué à temps."],
     undercover: ["Les undercover gagnent","Ils ont survécu jusqu'à égaler les civils."],
     jester: ["Le Bouffon gagne","Il voulait être éliminé — mission accomplie."],
+    amoureux: ["Les Amoureux gagnent","Ils sont restés seuls en vie, envers et contre tous les camps."],
   };
   const [big, sub] = titles[game.winner];
   box.appendChild(el(`
@@ -969,7 +1205,8 @@ function renderGameOver(){
   box.appendChild(el(`<h2 class="block-title">Dossier final</h2>`));
   const list = el(`<ul class="role-list"></ul>`);
   game.players.forEach(p=>{
-    const role = ROLE_LABEL[p.wordRole] + (p.special ? ` · ${SPECIAL_LABEL[p.special]}` : "");
+    let role = ROLE_LABEL[p.wordRole] + (p.special ? ` · ${SPECIAL_LABEL[p.special]}` : "");
+    if(p.loverId !== null) role += ` · Amoureux de ${game.players.find(pl=>pl.id===p.loverId).name}`;
     list.appendChild(el(`
       <li>
         <span class="rn">${p.name}${p.alive?"":" (éliminé)"}</span>
