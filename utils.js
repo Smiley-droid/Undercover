@@ -23,6 +23,10 @@ let setup = {
 let game = null; // objet de partie une fois lancée
 let screen = "home"; // "home" | "rules" | "setup" | "game"
 
+// Numéro de version affiché en pied de page de la configuration (DOSSIER N°XXX).
+// À incrémenter de 1 à chaque nouvelle mise à jour publiée sur le dépôt.
+const APP_VERSION = 10;
+
 /* ---------------------------------------------------------
    UTILITAIRES
 --------------------------------------------------------- */

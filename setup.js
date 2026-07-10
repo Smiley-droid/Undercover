@@ -170,7 +170,7 @@ function renderSetup(){
   startBtn.addEventListener('click', ()=>{ if(!validateSetup()){ startGame(); } });
   content.appendChild(el(`<div style="height:6px"></div>`));
   content.appendChild(startBtn);
-  content.appendChild(el(`<div class="footer-note">DOSSIER N°${String(Math.floor(Math.random()*900+100))} · À USAGE INTERNE</div>`));
+  content.appendChild(el(`<div class="footer-note">DOSSIER N°${String(APP_VERSION).padStart(3,'0')} · À USAGE INTERNE</div>`));
 
   wrap.appendChild(content);
 
