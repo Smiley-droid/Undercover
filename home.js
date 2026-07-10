@@ -1,0 +1,75 @@
+// Écran d'accueil : mise en scène visuelle façon "ciel nocturne" et logo, avant la configuration.
+// Contient aussi un court écran de règles accessible depuis l'accueil.
+
+function renderHome(){
+  const box = el(`
+    <div class="home-screen">
+      <div class="home-sky">
+        <div class="home-stars"></div>
+        <div class="home-moon"></div>
+        <div class="home-mountain home-mountain-back"></div>
+        <div class="home-mountain home-mountain-front"></div>
+      </div>
+      <div class="home-content">
+        <div class="eyebrow">Dossier confidentiel · Jeu de bluff</div>
+        <h1 class="title home-title">UNDERCOVER</h1>
+        <p class="subtitle home-subtitle">Un seul téléphone à faire tourner. Un mot à cacher. Qui est l'intrus ?</p>
+        <button class="btn btn-primary home-play-btn" id="home-play-btn">▶ Jouer</button>
+        <button class="btn btn-secondary home-rules-btn" id="home-rules-btn">Comment jouer ?</button>
+      </div>
+    </div>
+  `);
+  box.querySelector('#home-play-btn').addEventListener('click', ()=>{
+    screen = 'setup';
+    render();
+  });
+  box.querySelector('#home-rules-btn').addEventListener('click', ()=>{
+    screen = 'rules';
+    render();
+  });
+  return box;
+}
+
+function renderRules(){
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(`
+    <div class="masthead">
+      <div class="eyebrow">Dossier confidentiel</div>
+      <h1 class="title" style="font-size:22px;">Comment jouer ?</h1>
+    </div>
+  `));
+  const content = el(`
+    <div class="content">
+      <section class="block">
+        <h2 class="block-title">Le principe</h2>
+        <p class="block-desc">Chaque joueur reçoit un mot en privé sur le même téléphone. La majorité partage le même mot ; un ou plusieurs undercover ont un mot proche mais différent. À tour de rôle, chacun décrit son mot sans jamais le dire, puis le groupe vote pour éliminer celui qu'il soupçonne.</p>
+      </section>
+      <section class="block">
+        <h2 class="block-title">Déroulé d'une partie</h2>
+        <p class="block-desc">
+          1. Configurez le nombre de joueurs, les rôles spéciaux et les mots.<br>
+          2. Chacun consulte son rôle en privé (carte à maintenir appuyée).<br>
+          3. Tour de parole, puis vote à tour de rôle.<br>
+          4. Le joueur le plus voté est éliminé et son rôle est révélé.<br>
+          5. La partie continue jusqu'à ce qu'un camp l'emporte.
+        </p>
+      </section>
+      <section class="block">
+        <h2 class="block-title">Rôles spéciaux (activables)</h2>
+        <p class="block-desc">
+          <strong>Mr. White</strong> — aucun mot, doit bluffer ; s'il est éliminé, il peut deviner le mot des civils pour renverser la victoire.<br><br>
+          <strong>Détective</strong> — espionne un joueur en secret pendant la révélation.<br><br>
+          <strong>Bouffon</strong> — gagne seul s'il se fait éliminer par le vote.<br><br>
+          <strong>Amoureux</strong> — deux joueurs liés quel que soit leur camp ; si l'un meurt l'autre aussi, et s'ils restent seuls en vie ensemble, ils gagnent.<br><br>
+          <strong>Garde du corps</strong> — protège en secret un joueur du vote à chaque tour.<br><br>
+          <strong>Vengeur</strong> — s'il est éliminé, élimine aussitôt un autre joueur avec lui.
+        </p>
+      </section>
+    </div>
+  `);
+  const btn = el(`<button class="btn btn-primary">Retour</button>`);
+  btn.addEventListener('click', ()=>{ screen = 'home'; render(); });
+  content.appendChild(btn);
+  wrap.appendChild(content);
+  return wrap;
+}

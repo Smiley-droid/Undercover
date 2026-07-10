@@ -21,7 +21,7 @@ let setup = {
 };
 
 let game = null; // objet de partie une fois lancée
-let screen = "setup"; // "setup" | "game"
+let screen = "home"; // "home" | "rules" | "setup" | "game"
 
 /* ---------------------------------------------------------
    UTILITAIRES
@@ -45,5 +45,10 @@ function el(html){
 function render(){
   const app = document.getElementById('app');
   app.innerHTML = "";
-  app.appendChild(screen === "setup" ? renderSetup() : renderGame());
+  let view;
+  if(screen === "home") view = renderHome();
+  else if(screen === "rules") view = renderRules();
+  else if(screen === "setup") view = renderSetup();
+  else view = renderGame();
+  app.appendChild(view);
 }
