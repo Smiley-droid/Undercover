@@ -25,7 +25,7 @@ let screen = "home"; // "home" | "rules" | "setup" | "game"
 
 // Numéro de version affiché en pied de page de la configuration (DOSSIER N°XXX).
 // À incrémenter de 1 à chaque nouvelle mise à jour publiée sur le dépôt.
-const APP_VERSION = 10;
+const APP_VERSION = 11;
 
 /* ---------------------------------------------------------
    UTILITAIRES
@@ -46,12 +46,65 @@ function el(html){
   t.innerHTML = html.trim();
   return t.content.firstChild;
 }
+
+/* ---- Stockage local (joueurs enregistrés + scores) ---- */
+/* Enveloppé dans des try/catch : si le stockage local est indisponible
+   (mode privé, prévisualisation, etc.), le jeu continue de fonctionner
+   simplement sans mémoriser quoi que ce soit d'une session à l'autre. */
+function loadSavedPlayers(){
+  try{
+    const raw = localStorage.getItem('undercover_saved_players');
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function addSavedPlayers(names){
+  try{
+    const current = loadSavedPlayers();
+    const merged = current.slice();
+    names.forEach(n=>{
+      const trimmed = (n||"").trim();
+      if(trimmed && !merged.includes(trimmed)) merged.push(trimmed);
+    });
+    localStorage.setItem('undercover_saved_players', JSON.stringify(merged));
+  }catch(e){}
+}
+function removeSavedPlayer(name){
+  try{
+    const current = loadSavedPlayers().filter(n=>n!==name);
+    localStorage.setItem('undercover_saved_players', JSON.stringify(current));
+  }catch(e){}
+}
+function clearSavedPlayers(){
+  try{ localStorage.removeItem('undercover_saved_players'); }catch(e){}
+}
+function loadScores(){
+  try{
+    const raw = localStorage.getItem('undercover_scores');
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveScores(scores){
+  try{ localStorage.setItem('undercover_scores', JSON.stringify(scores)); }catch(e){}
+}
+function recordGameResult(playerNames, winnerNames){
+  const scores = loadScores();
+  playerNames.forEach(name=>{
+    if(!scores[name]) scores[name] = { games:0, wins:0 };
+    scores[name].games += 1;
+    if(winnerNames.includes(name)) scores[name].wins += 1;
+  });
+  saveScores(scores);
+}
+function clearScores(){
+  try{ localStorage.removeItem('undercover_scores'); }catch(e){}
+}
 function render(){
   const app = document.getElementById('app');
   app.innerHTML = "";
   let view;
   if(screen === "home") view = renderHome();
   else if(screen === "rules") view = renderRules();
+  else if(screen === "leaderboard") view = renderLeaderboard();
   else if(screen === "setup") view = renderSetup();
   else view = renderGame();
   app.appendChild(view);

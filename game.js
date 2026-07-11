@@ -84,7 +84,9 @@ function startGame(){
     pendingAvengerId: null,
     avengerKillIds: [],
     winner: null,
+    scoresSaved: false,
   };
+  addSavedPlayers(setup.names.slice(0,N).map(n=>(n||"").trim()).filter(Boolean));
   screen = 'game';
   render();
 }
@@ -624,7 +626,19 @@ function renderMrWhiteGuess(){
 }
 
 /* ---- Fin de partie ---- */
+function computeWinnerNames(){
+  if(game.winner === 'civils') return game.players.filter(p=>p.wordRole==='civil').map(p=>p.name);
+  if(game.winner === 'undercover') return game.players.filter(p=>p.wordRole==='undercover'||p.wordRole==='mrwhite').map(p=>p.name);
+  if(game.winner === 'jester') return game.players.filter(p=>p.special==='jester').map(p=>p.name);
+  if(game.winner === 'amoureux') return game.players.filter(p=>p.alive).map(p=>p.name);
+  return [];
+}
+
 function renderGameOver(){
+  if(!game.scoresSaved){
+    recordGameResult(game.players.map(p=>p.name), computeWinnerNames());
+    game.scoresSaved = true;
+  }
   const box = el(`<div></div>`);
   const titles = {
     civils: ["Les civils gagnent","L'infiltré a été démasqué à temps."],
@@ -660,5 +674,8 @@ function renderGameOver(){
   reset.addEventListener('click', ()=>{ screen='setup'; render(); });
   row.appendChild(replay); row.appendChild(reset);
   box.appendChild(row);
+  const leaderboardBtn = el(`<button class="btn btn-secondary" style="margin-top:10px;">Voir le classement</button>`);
+  leaderboardBtn.addEventListener('click', ()=>{ screen='leaderboard'; render(); });
+  box.appendChild(leaderboardBtn);
   return box;
 }

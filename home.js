@@ -16,6 +16,7 @@ function renderHome(){
         <p class="subtitle home-subtitle">Un seul téléphone à faire tourner. Un mot à cacher. Qui est l'intrus ?</p>
         <button class="btn btn-primary home-play-btn" id="home-play-btn">▶ Jouer</button>
         <button class="btn btn-secondary home-rules-btn" id="home-rules-btn">Comment jouer ?</button>
+        <button class="btn btn-secondary home-rules-btn" id="home-leaderboard-btn">Classement</button>
       </div>
     </div>
   `);
@@ -27,7 +28,61 @@ function renderHome(){
     screen = 'rules';
     render();
   });
+  box.querySelector('#home-leaderboard-btn').addEventListener('click', ()=>{
+    screen = 'leaderboard';
+    render();
+  });
   return box;
+}
+
+function renderLeaderboard(){
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(`
+    <div class="masthead">
+      <div class="eyebrow">Dossier confidentiel</div>
+      <h1 class="title" style="font-size:22px;">Classement</h1>
+    </div>
+  `));
+  const content = el(`<div class="content"></div>`);
+  const scores = loadScores();
+  const rows = Object.keys(scores).map(name=>({ name, ...scores[name] }));
+  rows.sort((a,b)=> b.wins - a.wins || b.games - a.games);
+
+  if(rows.length === 0){
+    content.appendChild(el(`
+      <section class="block">
+        <p class="block-desc">Aucune partie enregistrée pour l'instant. Jouez une première partie pour voir apparaître le classement ici.</p>
+      </section>
+    `));
+  } else {
+    const section = el(`<section class="block"><h2 class="block-title">Victoires par joueur</h2></section>`);
+    const list = el(`<ul class="role-list"></ul>`);
+    rows.forEach((r,i)=>{
+      list.appendChild(el(`
+        <li>
+          <span class="rn">${i+1}. ${r.name}</span>
+          <span class="rr">${r.wins} victoire${r.wins>1?'s':''} · ${r.games} partie${r.games>1?'s':''}</span>
+        </li>
+      `));
+    });
+    section.appendChild(list);
+    content.appendChild(section);
+  }
+
+  const btnRow = el(`<div class="btn-row"></div>`);
+  const backBtn = el(`<button class="btn btn-primary">Retour</button>`);
+  backBtn.addEventListener('click', ()=>{ screen = 'home'; render(); });
+  btnRow.appendChild(backBtn);
+  content.appendChild(btnRow);
+
+  if(rows.length > 0){
+    const resetBtn = el(`<button class="btn btn-secondary" style="margin-top:10px;">Réinitialiser les scores</button>`);
+    resetBtn.addEventListener('click', ()=>{ clearScores(); render(); });
+    content.appendChild(resetBtn);
+  }
+
+  wrap.appendChild(content);
+  return wrap;
 }
 
 function renderRules(){

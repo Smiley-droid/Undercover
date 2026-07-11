@@ -39,6 +39,7 @@ function renderSetup(){
   const content = el(`<div class="content"></div>`);
 
   // Bloc joueurs
+  const savedPlayers = loadSavedPlayers();
   const b1 = el(`
     <section class="block">
       <h2 class="block-title">Combien d'agents ce soir ?</h2>
@@ -49,6 +50,14 @@ function renderSetup(){
         <button data-act="inc-count">+</button>
       </div>
       <div class="name-list" id="name-list"></div>
+      ${savedPlayers.length ? `
+      <div style="margin-top:14px;">
+        <div class="block-desc" style="margin-bottom:8px;">Joueurs enregistrés — touchez pour ajouter :</div>
+        <div class="choice-row" id="saved-players-row">
+          ${savedPlayers.map(n=>`<div class="choice" data-saved="${n.replace(/"/g,'&quot;')}">${n}</div>`).join('')}
+          <div class="choice" data-act="clear-saved" style="color:var(--red);border-color:var(--red);">Effacer la liste</div>
+        </div>
+      </div>` : ``}
     </section>
   `);
   const nameList = b1.querySelector('#name-list');
@@ -180,6 +189,23 @@ function renderSetup(){
   wrap.querySelectorAll('[data-name-idx]').forEach(inp=>{
     inp.addEventListener('input', e=>{ setup.names[+e.target.dataset.nameIdx] = e.target.value; });
   });
+  wrap.querySelectorAll('[data-saved]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const name = chip.dataset.saved;
+      let slot = setup.names.findIndex((n,i)=> i<setup.count && !(n||"").trim());
+      if(slot === -1 && setup.count < 20){
+        setup.count += 1;
+        setup.names.length = setup.count;
+        slot = setup.count - 1;
+      }
+      if(slot !== -1){
+        setup.names[slot] = name;
+        render();
+      }
+    });
+  });
+  const clearSavedBtn = wrap.querySelector('[data-act="clear-saved"]');
+  if(clearSavedBtn) clearSavedBtn.addEventListener('click', ()=>{ clearSavedPlayers(); render(); });
   wrap.querySelector('[data-act="dec-uc"]').onclick = ()=>{ setup.undercoverCount = Math.max(1, setup.undercoverCount-1); render(); };
   wrap.querySelector('[data-act="inc-uc"]').onclick = ()=>{ setup.undercoverCount = Math.min(maxUndercover(), setup.undercoverCount+1); render(); };
   wrap.querySelector('[data-act="toggle-mrwhite"]').onclick = ()=>{ setup.mrWhite = !setup.mrWhite; render(); };
